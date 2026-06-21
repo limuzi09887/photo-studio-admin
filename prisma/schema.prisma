@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String   @default("")
+  remark    String   @default("") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  orders    Order[]
+
+  @@index([phone])
+  @@map("customers")
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  orderNo         String    @unique @map("order_no")
+  customerId      String    @map("customer_id")
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  shootType       String    @map("shoot_type")
+  amount          Decimal?  @db.Decimal(10, 2)
+  status          String    @default("已创建")
+  appointmentTime DateTime? @map("appointment_time")
+  shootTime       DateTime? @map("shoot_time")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  files        OrderFile[]
+  products     OrderProduct[]
+  payments     Payment[]
+  emailRecords EmailRecord[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderFile {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id])
+  fileName  String   @map("file_name")
+  fileUrl   String   @map("file_url") @db.Text
+  fileSize  BigInt   @map("file_size")
+  fileType  String   @map("file_type")
+  aiParams  Json?    @map("ai_params")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([fileType])
+  @@map("order_files")
+}
+
+model OrderProduct {
+  id        String  @id @default(cuid())
+  orderId   String  @map("order_id")
+  order     Order   @relation(fields: [orderId], references: [id])
+  name      String
+  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+  quantity  Int     @default(1)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  @@map("order_products")
+}
+
+model Payment {
+  id      String   @id @default(cuid())
+  orderId String   @map("order_id")
+  order   Order    @relation(fields: [orderId], references: [id])
+  amount  Decimal  @db.Decimal(10, 2)
+  method  String
+  type    String   @default("尾款")
+  paidAt  DateTime @default(now()) @map("paid_at")
+
+  @@map("payments")
+}
+
+model EmailRecord {
+  id            String   @id @default(cuid())
+  orderId       String   @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id])
+  receiverEmail String   @map("receiver_email")
+  subject       String   @default("")
+  status        String   @default("成功")
+  errorMessage  String?  @map("error_message") @db.Text
+  sentAt        DateTime @default(now()) @map("sent_at")
+
+  @@map("email_records")
+}
+
+model ShootType {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  price       Decimal? @db.Decimal(10, 2)
+  description String  @default("")
+
+  @@map("shoot_types")
+}
+
+model EmailTemplate {
+  id        String  @id @default(cuid())
+  name      String
+  subject   String
+  body      String  @db.Text
+  isDefault Boolean @default(false) @map("is_default")
+
+  @@map("email_templates")
+}
