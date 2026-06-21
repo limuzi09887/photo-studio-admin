@@ -1,0 +1,83 @@
+<div style="display:flex;gap:24px;min-height:80vh">
+  <div style="width:220px;background:#1a1a2e;border-radius:16px;padding:24px 0;color:#fff;flex-shrink:0">
+    <div style="padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:8px">
+      <h3 style="margin:0;font-size:18px;color:#fff">📷 光影照相馆</h3>
+      <p style="margin:4px 0 0;font-size:12px;color:#8890a0">经营管理后台</p>
+    </div>
+    <nav style="padding:8px 12px">
+      <div style="padding:10px 12px;border-radius:10px;color:#a0a8b8;font-size:14px;margin-bottom:2px;cursor:pointer">📊 概览</div>
+      <div style="padding:10px 12px;border-radius:10px;color:#a0a8b8;font-size:14px;margin-bottom:2px;cursor:pointer">📋 订单管理</div>
+      <div style="padding:10px 12px;border-radius:10px;color:#a0a8b8;font-size:14px;margin-bottom:2px;cursor:pointer">👥 客资</div>
+      <div style="padding:10px 12px;border-radius:10px;background:rgba(99,102,241,0.2);color:#818cf8;font-weight:600;font-size:14px;margin-bottom:2px;cursor:pointer">🖼️ 照片</div>
+      <div style="padding:10px 12px;border-radius:10px;color:#a0a8b8;font-size:14px;margin-bottom:2px;cursor:pointer">📈 报表</div>
+      <div style="padding:10px 12px;border-radius:10px;color:#a0a8b8;font-size:14px;margin-bottom:2px;cursor:pointer">⚙️ 设置</div>
+    </nav>
+    <div style="padding:8px 12px"><div style="padding:10px 12px;border-radius:10px;color:#a0a8b8;font-size:14px;cursor:pointer">🚪 退出</div></div>
+  </div>
+
+  <div style="flex:1">
+    <div style="margin-bottom:24px">
+      <h2 style="margin:0;font-size:24px">照片</h2>
+      <p style="margin:4px 0 0;color:#8890a0;font-size:14px">今日拍摄原片 · 2026年06月21日</p>
+    </div>
+
+    <!-- Tab切换 -->
+    <div style="display:flex;gap:0;margin-bottom:24px;background:#f3f4f6;border-radius:10px;padding:4px;width:fit-content">
+      <div style="padding:8px 20px;border-radius:8px;background:#6366f1;color:#fff;font-size:13px;font-weight:600;cursor:pointer">📷 今日原片（156张）</div>
+      <div style="padding:8px 20px;border-radius:8px;color:#6b7280;font-size:13px;cursor:pointer">✨ 今日成片（42张）</div>
+      <div style="padding:8px 20px;border-radius:8px;color:#6b7280;font-size:13px;cursor:pointer">📋 今日底片（38张）</div>
+    </div>
+
+    <!-- 统计条 -->
+    <div style="display:flex;gap:16px;margin-bottom:20px">
+      <div style="background:#fff;border-radius:10px;padding:12px 20px;border:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;color:#8890a0">总张数</span><span style="font-size:18px;font-weight:700">156 张</span>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:12px 20px;border:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;color:#8890a0">总大小</span><span style="font-size:18px;font-weight:700">2.3 GB</span>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:12px 20px;border:1px solid #f0f0f0;display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;color:#8890a0">涉及订单</span><span style="font-size:18px;font-weight:700">6 单</span>
+      </div>
+    </div>
+
+    <!-- 照片网格 -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+      <div style="background:#fff;border-radius:12px;border:1px solid #f0f0f0;overflow:hidden;cursor:pointer">
+        <div style="height:120px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px">🌄</div>
+        <div style="padding:10px 12px">
+          <p style="margin:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">IMG_2101.jpg</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#8890a0">3.2 MB · PS20260621003</p>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid #f0f0f0;overflow:hidden;cursor:pointer">
+        <div style="height:120px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px">🌅</div>
+        <div style="padding:10px 12px">
+          <p style="margin:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">IMG_2102.jpg</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#8890a0">2.8 MB · PS20260621003</p>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid #f0f0f0;overflow:hidden;cursor:pointer">
+        <div style="height:120px;background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px">🏔️</div>
+        <div style="padding:10px 12px">
+          <p style="margin:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">IMG_2103.jpg</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#8890a0">4.1 MB · PS20260621003</p>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid #f0f0f0;overflow:hidden;cursor:pointer">
+        <div style="height:120px;background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px">🖼️</div>
+        <div style="padding:10px 12px">
+          <p style="margin:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">IMG_2104.jpg</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#8890a0">2.1 MB · PS20260621004</p>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid #f0f0f0;overflow:hidden;cursor:pointer">
+        <div style="height:120px;background:linear-gradient(135deg,#fa709a 0%,#fee140 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px">🎨</div>
+        <div style="padding:10px 12px">
+          <p style="margin:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">IMG_2105.jpg</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#8890a0">1.8 MB · PS20260621004</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
