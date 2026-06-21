@@ -19,7 +19,7 @@ export async function submitAiRetouch(
   const response = await fetch('https://vision.aliyuncs.com/api/v1/retouch', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.ALIYUN_AI_ACCESS_KEY}`,
+      'Authorization': `Bearer ${process.env.ALIYUN_ACCESS_KEY_ID}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ imageUrl: originalUrl, actions }),
