@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getPublicUrl } from '@/lib/r2'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
