@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ProgressBar } from '@/components/orders/progress-bar'
 import { Badge } from '@/components/ui/badge'
 import { formatDateTime } from '@/lib/utils'
+import { CancelOrderButton } from '@/components/orders/cancel-order-button'
 
 export default async function OrderSummaryPage({
   params,
@@ -16,9 +17,14 @@ export default async function OrderSummaryPage({
   })
   if (!order) notFound()
 
+  const canCancel = order.status !== '已取消' && order.status !== '已完成'
+
   return (
     <div className="bg-white rounded-2xl p-7 border border-gray-100">
-      <h3 className="text-lg font-bold mb-5">订单摘要</h3>
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-lg font-bold">订单摘要</h3>
+        {canCancel && <CancelOrderButton orderId={order.id} />}
+      </div>
 
       <div className="bg-gray-50 rounded-xl p-5 mb-6">
         <ProgressBar status={order.status} />
