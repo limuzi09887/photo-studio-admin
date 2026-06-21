@@ -16,7 +16,6 @@ model Customer {
   createdAt DateTime @default(now()) @map("created_at")
   orders    Order[]
 
-  @@index([phone])
   @@map("customers")
 }
 
@@ -68,6 +67,7 @@ model OrderProduct {
   quantity  Int     @default(1)
   subtotal  Decimal @db.Decimal(10, 2)
 
+  @@index([orderId])
   @@map("order_products")
 }
 
@@ -80,6 +80,7 @@ model Payment {
   type    String   @default("尾款")
   paidAt  DateTime @default(now()) @map("paid_at")
 
+  @@index([orderId])
   @@map("payments")
 }
 
@@ -93,6 +94,7 @@ model EmailRecord {
   errorMessage  String?  @map("error_message") @db.Text
   sentAt        DateTime @default(now()) @map("sent_at")
 
+  @@index([orderId])
   @@map("email_records")
 }
 
