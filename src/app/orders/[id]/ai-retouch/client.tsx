@@ -95,6 +95,8 @@ export function AiRetouchClient({
     )
 
     const pendingPairs = pairs.filter((p) => p.retouchedStatus === '待处理')
+    let successCount = 0
+    let failCount = 0
 
     for (const pair of pendingPairs) {
       try {
@@ -103,17 +105,15 @@ export function AiRetouchClient({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             originalFileId: pair.originalId,
-            originalUrl: pair.originalUrl,
             params,
           }),
         })
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'AI 修图失败' }))
-          throw new Error(err.error || 'AI 修图失败')
-        }
-
         const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || `HTTP ${res.status}: AI 修图失败`)
+        }
 
         setPairs((prev) =>
           prev.map((p) =>
@@ -128,7 +128,9 @@ export function AiRetouchClient({
               : p
           )
         )
+        successCount++
       } catch (err) {
+        failCount++
         setPairs((prev) =>
           prev.map((p) =>
             p.originalId === pair.originalId
@@ -144,7 +146,11 @@ export function AiRetouchClient({
     }
 
     setSubmitting(false)
-    toast.success('AI 修图任务处理完成')
+    if (failCount > 0) {
+      toast.error(`完成 ${successCount}，失败 ${failCount}`)
+    } else {
+      toast.success(`全部 ${successCount} 张 AI 修图完成`)
+    }
     router.refresh()
   }, [orderId, pairs, router])
 
@@ -169,17 +175,15 @@ export function AiRetouchClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           originalFileId: originalId,
-          originalUrl: pair.originalUrl,
           params: currentParams,
         }),
       })
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'AI 修图失败' }))
-        throw new Error(err.error || 'AI 修图失败')
-      }
-
       const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}: AI 修图失败`)
+      }
 
       setPairs((prev) =>
         prev.map((p) =>
@@ -187,7 +191,7 @@ export function AiRetouchClient({
             ? {
                 ...p,
                 retouchedStatus: '完成' as RetouchStatus,
-                retouchedUrl: data.aiFile.fileUrl,
+                retouchedUrl: `/api/files/proxy?fileId=${data.aiFile.id}`,
                 retouchedName: data.aiFile.fileName,
                 processingTime: data.aiFile.aiParams?.processingTime,
               }
