@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatFileSize, getFileProxyUrl } from '@/lib/utils'
+import { ThumbCard } from '@/components/orders/thumb-card'
 import { ImagePreview } from '@/components/orders/image-preview'
 
 interface FileItem {
@@ -29,31 +29,16 @@ function PhotoGrid({ files }: { files: FileItem[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-4 gap-4">
         {files.map((f) => (
-          <div
+          <ThumbCard
             key={f.id}
-            className="bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+            fileId={f.id}
+            fileName={f.fileName}
+            fileSize={f.fileSize}
+            extraInfo={f.order.orderNo}
             onClick={() => setPreviewFile(f)}
-          >
-            <div className="h-[120px] bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-3xl overflow-hidden">
-              <img
-                src={getFileProxyUrl(f.id)}
-                alt={f.fileName}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none'
-                  ;(e.target as HTMLImageElement).parentElement!.innerHTML = '🖼️'
-                }}
-              />
-            </div>
-            <div className="p-3">
-              <p className="text-xs font-semibold truncate">{f.fileName}</p>
-              <p className="text-[11px] text-gray-400">
-                {formatFileSize(Number(f.fileSize))} · {f.order.orderNo}
-              </p>
-            </div>
-          </div>
+          />
         ))}
       </div>
       {previewFile && (

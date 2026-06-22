@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatFileSize } from '@/lib/utils'
+import { ThumbCard } from '@/components/orders/thumb-card'
 import { ImagePreview } from '@/components/orders/image-preview'
 
 interface FileItem {
@@ -18,24 +18,15 @@ export function PhotoGrid({ files }: { files: FileItem[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-4 gap-4">
         {files.map((f) => (
-          <div
+          <ThumbCard
             key={f.id}
-            className="bg-gray-50 rounded-lg p-2 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+            fileId={f.id}
+            fileName={f.fileName}
+            fileSize={f.fileSize}
             onClick={() => setPreviewFile(f)}
-          >
-            <div className="h-24 bg-gray-200 rounded flex items-center justify-center overflow-hidden mb-1">
-              <img
-                src={`/api/files/proxy?fileId=${f.id}`}
-                alt={f.fileName}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-            <p className="text-xs mt-1 truncate" title={f.fileName}>{f.fileName}</p>
-            <p className="text-[10px] text-gray-400">{formatFileSize(Number(f.fileSize))}</p>
-          </div>
+          />
         ))}
       </div>
       {previewFile && (

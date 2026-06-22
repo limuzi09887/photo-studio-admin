@@ -2,9 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { formatFileSize } from '@/lib/utils'
+import { ThumbCard } from '@/components/orders/thumb-card'
 import { ImagePreview } from '@/components/orders/image-preview'
 
 interface FileInfo {
@@ -87,27 +86,15 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
       )}
 
       {existingFiles.length > 0 && (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-4 gap-4">
           {existingFiles.map((f) => (
-            <div
+            <ThumbCard
               key={f.id}
-              className="bg-gray-50 rounded-lg p-2 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+              fileId={f.id}
+              fileName={f.fileName}
+              fileSize={f.fileSize}
               onClick={() => setPreviewFile(f)}
-            >
-              <div className="h-20 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
-                <img
-                  src={`/api/files/proxy?fileId=${f.id}`}
-                  alt={f.fileName}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none'
-                    ;(e.target as HTMLImageElement).parentElement!.innerHTML = '🖼️'
-                  }}
-                />
-              </div>
-              <p className="text-xs mt-1 truncate">{f.fileName}</p>
-              <p className="text-[10px] text-gray-400">{formatFileSize(f.fileSize)}</p>
-            </div>
+            />
           ))}
         </div>
       )}
