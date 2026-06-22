@@ -54,6 +54,13 @@ export function ThumbCard({
         {extraInfo && (
           <p className="text-[10px] text-gray-300 mt-0.5">{extraInfo}</p>
         )}
+        <a
+          href={`/api/files/proxy?fileId=${fileId}&download=1`}
+          className="flex items-center justify-center gap-1 mt-2 py-1.5 rounded-md bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 text-xs text-gray-500 transition-colors"
+          onClick={(e) => e.stopPropagation()}
+        >
+          ⬇ 下载
+        </a>
       </div>
     </div>
   )

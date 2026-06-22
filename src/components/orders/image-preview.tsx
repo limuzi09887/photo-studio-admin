@@ -17,31 +17,19 @@ export function ImagePreview({
   onClose: () => void
   extraInfo?: string
 }) {
-  const src = `/api/files/proxy?fileId=${file.id}`
-  const downloadUrl = `/api/files/proxy?fileId=${file.id}&download=1`
-
   return (
     <div
       className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center"
       onClick={onClose}
     >
-      <div className="absolute top-4 right-4 flex items-center gap-3 z-10">
-        <a
-          href={downloadUrl}
-          className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          ⬇ 下载
-        </a>
-        <button
-          className="text-white text-3xl hover:text-gray-300"
-          onClick={onClose}
-        >
-          ✕
-        </button>
-      </div>
+      <button
+        className="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 z-10"
+        onClick={onClose}
+      >
+        ✕
+      </button>
       <img
-        src={src}
+        src={`/api/files/proxy?fileId=${file.id}`}
         alt={file.fileName}
         className="max-w-[90vw] max-h-[90vh] object-contain"
         onClick={(e) => e.stopPropagation()}
