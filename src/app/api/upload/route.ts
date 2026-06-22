@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PutObjectCommand } from '@aws-sdk/client-s3'
-import { oss, OSS_BUCKET, getPublicUrl } from '@/lib/r2'
+import { oss, getPublicUrl } from '@/lib/r2'
 import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -30,15 +29,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `文件读取失败: ${e instanceof Error ? e.message : e}` }, { status: 500 })
   }
 
-  // Step 3: Upload to OSS
+  // Step 3: Upload to OSS using official SDK
   const key = `${orderId}/original/${Date.now()}_${file.name}`
   try {
-    await oss.send(new PutObjectCommand({
-      Bucket: OSS_BUCKET,
-      Key: key,
-      Body: buffer,
-      ContentType: file.type || 'image/jpeg',
-    }))
+    await oss.put(key, buffer, {
+      mime: file.type || 'image/jpeg',
+    })
   } catch (e) {
     return NextResponse.json({ error: `OSS上传失败: ${e instanceof Error ? e.message : e}` }, { status: 500 })
   }

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GetObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { prisma } from '@/lib/db'
-import { oss, OSS_BUCKET, OSS_PUBLIC_URL } from '@/lib/r2'
+import { getFileUrl, OSS_PUBLIC_URL } from '@/lib/r2'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,8 +15,8 @@ export async function GET(request: NextRequest) {
   const key = file.fileUrl.replace(`${OSS_PUBLIC_URL}/`, '')
 
   try {
-    const command = new GetObjectCommand({ Bucket: OSS_BUCKET, Key: key })
-    const signedUrl = await getSignedUrl(oss, command, { expiresIn: 3600 })
+    // Try generating a signed URL (works even if bucket is private)
+    const signedUrl = await getFileUrl(key)
     return NextResponse.redirect(signedUrl)
   } catch {
     // Fallback: try public URL directly
