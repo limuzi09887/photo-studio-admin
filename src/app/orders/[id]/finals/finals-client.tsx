@@ -13,6 +13,31 @@ interface FileInfo {
   fileSize: number
 }
 
+function ImagePreview({ file, onClose }: { file: FileInfo; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center cursor-pointer"
+      onClick={onClose}
+    >
+      <button
+        className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
+        onClick={onClose}
+      >
+        ✕
+      </button>
+      <img
+        src={getFileProxyUrl(file.id)}
+        alt={file.fileName}
+        className="max-w-[90vw] max-h-[90vh] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-lg">
+        {file.fileName} · {formatFileSize(file.fileSize)}
+      </div>
+    </div>
+  )
+}
+
 export function FinalsClient({
   orderId,
   existingFiles,
@@ -22,6 +47,7 @@ export function FinalsClient({
 }) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState<Record<string, number>>({})
+  const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
@@ -35,7 +61,6 @@ export function FinalsClient({
         newProgress[file.name] = 0
         setProgress({ ...newProgress })
 
-        // Upload via server proxy (avoids OSS CORS issues)
         const formData = new FormData()
         formData.append('file', file)
         formData.append('orderId', orderId)
@@ -70,21 +95,10 @@ export function FinalsClient({
         }}
       >
         <p className="text-4xl mb-3">✅</p>
-        <p className="text-base font-semibold text-gray-700">
-          上传最终成片
-        </p>
-        <p className="text-sm text-gray-400 mt-1">
-          上传确认后的精修照片，支持批量上传
-        </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => e.target.files && handleUpload(e.target.files)}
-          disabled={uploading}
-        />
+        <p className="text-base font-semibold text-gray-700">上传最终成片</p>
+        <p className="text-sm text-gray-400 mt-1">上传确认后的精修照片，支持批量上传</p>
+        <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
+          onChange={(e) => e.target.files && handleUpload(e.target.files)} disabled={uploading} />
       </div>
 
       {uploading && Object.keys(progress).length > 0 && (
@@ -93,16 +107,10 @@ export function FinalsClient({
             <div key={name} className="flex items-center gap-3">
               <span className="text-sm w-40 truncate">{name}</span>
               <div className="flex-1 h-2 bg-gray-200 rounded">
-                <div
-                  className={`h-full rounded transition-all ${
-                    pct < 0 ? 'bg-red-500 w-full' : 'bg-green-500'
-                  }`}
-                  style={{ width: pct < 0 ? '100%' : `${pct}%` }}
-                />
+                <div className={`h-full rounded transition-all ${pct < 0 ? 'bg-red-500 w-full' : 'bg-green-500'}`}
+                  style={{ width: pct < 0 ? '100%' : `${pct}%` }} />
               </div>
-              <span className="text-xs w-16 text-right">
-                {pct < 0 ? '失败' : `${pct}%`}
-              </span>
+              <span className="text-xs w-16 text-right">{pct < 0 ? '失败' : `${pct}%`}</span>
             </div>
           ))}
         </div>
@@ -111,7 +119,11 @@ export function FinalsClient({
       {existingFiles.length > 0 ? (
         <div className="grid grid-cols-5 gap-3">
           {existingFiles.map((f) => (
-            <div key={f.id} className="bg-gray-50 rounded-lg p-2 text-center">
+            <div
+              key={f.id}
+              className="bg-gray-50 rounded-lg p-2 text-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all"
+              onClick={() => setPreviewFile(f)}
+            >
               <div className="h-24 bg-gray-200 rounded flex items-center justify-center overflow-hidden mb-1">
                 <img
                   src={getFileProxyUrl(f.id)}
@@ -124,19 +136,17 @@ export function FinalsClient({
                   }}
                 />
               </div>
-              <p className="text-xs mt-1 truncate" title={f.fileName}>
-                {f.fileName}
-              </p>
-              <p className="text-[10px] text-gray-400">
-                {formatFileSize(f.fileSize)}
-              </p>
+              <p className="text-xs mt-1 truncate" title={f.fileName}>{f.fileName}</p>
+              <p className="text-[10px] text-gray-400">{formatFileSize(f.fileSize)}</p>
             </div>
           ))}
         </div>
       ) : (
-        !uploading && (
-          <p className="text-center text-gray-400 py-8">暂无成片</p>
-        )
+        !uploading && <p className="text-center text-gray-400 py-8">暂无成片</p>
+      )}
+
+      {previewFile && (
+        <ImagePreview file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
     </div>
   )
