@@ -1,93 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { oss, OSS_PUBLIC_URL } from '@/lib/r2'
+import { processImage } from '@/lib/ai'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const body = await request.json()
-  const { originalFileId, originalUrl, params: retouchParams } = body
+
+  let body: Record<string, unknown>
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '请求体解析失败' }, { status: 400 })
+  }
+
+  const { originalFileId, params: retouchParams } = body as {
+    originalFileId?: string
+    params?: Record<string, string>
+  }
+
+  if (!originalFileId || !retouchParams) {
+    return NextResponse.json({ error: '缺少必要参数' }, { status: 400 })
+  }
 
   try {
     const startTime = Date.now()
 
-    // Submit AI retouch task
-    const actions: { type: string; [key: string]: string }[] = []
-    if (retouchParams.bgColor && retouchParams.bgColor !== 'keep') {
-      actions.push({ type: 'changeBackground', color: retouchParams.bgColor })
-    }
-    if (retouchParams.clarity && retouchParams.clarity !== '不处理') {
-      actions.push({ type: 'enhanceFace', level: retouchParams.clarity })
-    }
-    if (retouchParams.brightness && retouchParams.brightness !== 'keep') {
-      actions.push({ type: 'adjustBrightness', level: retouchParams.brightness })
-    }
-    if (retouchParams.skinSmooth && retouchParams.skinSmooth !== 'none') {
-      actions.push({ type: 'smoothSkin', level: retouchParams.skinSmooth })
+    // 1. Look up the original file in DB
+    const originalFile = await prisma.orderFile.findUnique({
+      where: { id: originalFileId },
+    })
+    if (!originalFile) {
+      return NextResponse.json({ error: '原图文件不存在' }, { status: 404 })
     }
 
-    let taskId: string
-    if (process.env.ALIYUN_AI_ACCESS_KEY) {
-      const response = await fetch('https://vision.aliyuncs.com/api/v1/retouch', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.ALIYUN_AI_ACCESS_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageUrl: originalUrl, actions }),
+    // 2. Extract OSS key from fileUrl
+    const ossKey = originalFile.fileUrl.replace(`${OSS_PUBLIC_URL}/`, '')
+
+    // 3. Download original image from OSS
+    let originalBuffer: Buffer
+    try {
+      const ossResult = await oss.get(ossKey)
+      originalBuffer = Buffer.from(ossResult.content)
+    } catch (ossErr) {
+      console.error('OSS download error:', ossErr)
+      return NextResponse.json(
+        { error: `原图下载失败: ${ossErr instanceof Error ? ossErr.message : 'OSS 错误'}` },
+        { status: 500 }
+      )
+    }
+
+    // 4. Process the image with sharp
+    let processedBuffer: Buffer
+    try {
+      processedBuffer = await processImage(originalBuffer, {
+        bgColor: retouchParams.bgColor || 'keep',
+        clarity: retouchParams.clarity || '不处理',
+        brightness: retouchParams.brightness || 'keep',
+        skinSmooth: retouchParams.skinSmooth || 'none',
       })
-      const data = await response.json()
-      taskId = data.taskId || `task_${Date.now()}`
-    } else {
-      // Fallback for development without API key
-      taskId = `task_${Date.now()}`
-    }
-
-    // Poll for result (simplified: in production use webhook/callback)
-    let resultUrl = originalUrl
-    let attempts = 0
-    const maxAttempts = 10
-
-    if (process.env.ALIYUN_AI_ACCESS_KEY) {
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        const pollRes = await fetch(`https://vision.aliyuncs.com/api/v1/tasks/${taskId}`, {
-          headers: { 'Authorization': `Bearer ${process.env.ALIYUN_AI_ACCESS_KEY}` },
-        })
-        const pollData = await pollRes.json()
-        if (pollData.success && pollData.resultUrl) {
-          resultUrl = pollData.resultUrl
-          break
-        }
-        attempts++
-      }
+    } catch (procErr) {
+      console.error('Image processing error:', procErr)
+      return NextResponse.json(
+        { error: `图像处理失败: ${procErr instanceof Error ? procErr.message : '处理错误'}` },
+        { status: 500 }
+      )
     }
 
     const processingTime = Math.round((Date.now() - startTime) / 1000)
 
-    // Create AI result file record
-    const originalFile = await prisma.orderFile.findUnique({ where: { id: originalFileId } })
-    const retouchedName = originalFile
-      ? originalFile.fileName.replace(/\.(jpg|jpeg|png|heic)$/i, '_retouched.$1')
-      : `retouched_${Date.now()}.jpg`
+    // 5. Upload processed image to OSS
+    const retouchedName = originalFile.fileName.replace(
+      /\.(jpg|jpeg|png|heic|webp)$/i,
+      '_retouched.$1'
+    )
+    const resultKey = `${id}/ai-retouch/${Date.now()}_${retouchedName}`
 
+    try {
+      await oss.put(resultKey, processedBuffer, {
+        mime: 'image/jpeg',
+        headers: { 'Content-Type': 'image/jpeg' },
+      })
+    } catch (uploadErr) {
+      console.error('OSS upload error:', uploadErr)
+      return NextResponse.json(
+        { error: `修图上传失败: ${uploadErr instanceof Error ? uploadErr.message : 'OSS 错误'}` },
+        { status: 500 }
+      )
+    }
+
+    // 6. Create AI_RESULT record in database
+    const resultUrl = `${OSS_PUBLIC_URL}/${resultKey}`
     const aiFile = await prisma.orderFile.create({
       data: {
         orderId: id,
         fileName: retouchedName,
         fileUrl: resultUrl,
-        fileSize: BigInt(0),
+        fileSize: BigInt(processedBuffer.length),
         fileType: 'AI_RESULT',
-        aiParams: { ...retouchParams, taskId, processingTime },
+        aiParams: {
+          ...retouchParams,
+          processingTime,
+          originalFileId,
+        },
       },
     })
 
-    // Update order status if currently in appropriate state
+    // 7. Update order status if appropriate
     const order = await prisma.order.findUnique({ where: { id } })
-    if (order && order.status === '已拍摄') {
+    if (order && (order.status === '已拍摄' || order.status === 'AI修图中')) {
       await prisma.order.update({
         where: { id },
         data: { status: 'AI修图中' },
@@ -96,11 +122,12 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      taskId,
+      processingTime,
       aiFile: {
         id: aiFile.id,
         fileName: aiFile.fileName,
         fileUrl: aiFile.fileUrl,
+        fileSize: aiFile.fileSize.toString(),
         aiParams: aiFile.aiParams,
       },
     })
@@ -118,7 +145,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const body = await request.json()
+
+  let body: Record<string, unknown>
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '请求体解析失败' }, { status: 400 })
+  }
 
   if (body.action === 'confirm') {
     const order = await prisma.order.findUnique({ where: { id } })

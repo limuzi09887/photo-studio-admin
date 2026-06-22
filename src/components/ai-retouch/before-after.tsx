@@ -63,7 +63,7 @@ export function BeforeAfter({ original, retouched, onRetry, onConfirm }: BeforeA
           <div className="px-4 py-2.5 bg-gray-50 flex items-center justify-between">
             <span className="text-[11px] text-gray-400">🕐 处理耗时 {retouched.processingTime || '--'}秒</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="text-xs">⬇ 下载</Button>
+              <a href={retouched.url} download={retouched.name} className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">⬇ 下载</a>
               {onConfirm && <Button size="sm" onClick={onConfirm} className="bg-indigo-500 hover:bg-indigo-600 text-xs">✅ 确认</Button>}
             </div>
           </div>
