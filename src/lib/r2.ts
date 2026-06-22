@@ -5,6 +5,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 export const oss = new S3Client({
   region: process.env.OSS_REGION!,
   endpoint: process.env.OSS_ENDPOINT!,
+  forcePathStyle: true,
   credentials: {
     accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID!,
     secretAccessKey: process.env.ALIYUN_ACCESS_KEY_SECRET!,
