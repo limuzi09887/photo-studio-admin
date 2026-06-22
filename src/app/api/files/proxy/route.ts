@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       headers['Content-Disposition'] = `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`
     }
 
-    return new NextResponse(result.content, { headers })
+    return new NextResponse(new Uint8Array(result.content), { headers })
   } catch (err) {
     // Fallback: signed URL redirect
     try {
