@@ -13,9 +13,35 @@ interface FileInfo {
   fileSize: number
 }
 
+function ImagePreview({ file, onClose }: { file: FileInfo; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center cursor-pointer"
+      onClick={onClose}
+    >
+      <button
+        className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
+        onClick={onClose}
+      >
+        ✕
+      </button>
+      <img
+        src={`/api/files/proxy?fileId=${file.id}`}
+        alt={file.fileName}
+        className="max-w-[90vw] max-h-[90vh] object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-lg">
+        {file.fileName} · {formatFileSize(file.fileSize)}
+      </div>
+    </div>
+  )
+}
+
 export function UploadClient({ orderId, existingFiles }: { orderId: string; existingFiles: FileInfo[] }) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState<Record<string, number>>({})
+  const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
@@ -29,7 +55,6 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
         newProgress[file.name] = 0
         setProgress({ ...newProgress })
 
-        // Upload via server proxy (avoids OSS CORS issues)
         const formData = new FormData()
         formData.append('file', file)
         formData.append('orderId', orderId)
@@ -88,7 +113,11 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
       {existingFiles.length > 0 && (
         <div className="grid grid-cols-5 gap-3">
           {existingFiles.map((f) => (
-            <div key={f.id} className="bg-gray-50 rounded-lg p-2 text-center">
+            <div
+              key={f.id}
+              className="bg-gray-50 rounded-lg p-2 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+              onClick={() => setPreviewFile(f)}
+            >
               <div className="h-20 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
                 <img
                   src={`/api/files/proxy?fileId=${f.id}`}
@@ -109,6 +138,10 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
 
       {existingFiles.length === 0 && !uploading && (
         <p className="text-center text-gray-400 py-8">暂未上传原图</p>
+      )}
+
+      {previewFile && (
+        <ImagePreview file={previewFile} onClose={() => setPreviewFile(null)} />
       )}
     </div>
   )
