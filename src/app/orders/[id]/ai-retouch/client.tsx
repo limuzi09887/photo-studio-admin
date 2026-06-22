@@ -121,7 +121,7 @@ export function AiRetouchClient({
               ? {
                   ...p,
                   retouchedStatus: '完成' as RetouchStatus,
-                  retouchedUrl: data.aiFile.fileUrl,
+                  retouchedUrl: `/api/files/proxy?fileId=${data.aiFile.id}`,
                   retouchedName: data.aiFile.fileName,
                   processingTime: data.aiFile.aiParams?.processingTime,
                 }
