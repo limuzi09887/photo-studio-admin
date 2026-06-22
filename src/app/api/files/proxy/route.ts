@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { oss } from '@/lib/r2'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   const fileId = request.nextUrl.searchParams.get('fileId')
@@ -12,26 +13,29 @@ export async function GET(request: NextRequest) {
   if (!file) return NextResponse.json({ error: 'File not found' }, { status: 404 })
 
   const isDownload = request.nextUrl.searchParams.get('download') === '1'
-
-  // Extract OSS key from fileUrl
   const OSS_PUBLIC_URL = process.env.OSS_PUBLIC_URL!
   const key = file.fileUrl.replace(`${OSS_PUBLIC_URL}/`, '')
 
   try {
-    // Stream the file from OSS through our server
-    const result = await oss.getStream(key)
+    // Download from OSS
+    const result = await oss.get(key)
     const headers: Record<string, string> = {
       'Content-Type': result.res.headers['content-type'] || 'image/jpeg',
-      'Cache-Control': 'public, max-age=3600',
+      'Content-Length': String(result.res.headers['content-length'] || result.content.length),
+      'Cache-Control': 'public, max-age=86400',
     }
     if (isDownload) {
-      headers['Content-Disposition'] = `attachment; filename="${encodeURIComponent(file.fileName)}"`
+      headers['Content-Disposition'] = `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`
     }
 
-    return new NextResponse(result.stream as any, { headers })
-  } catch {
-    // Fallback: redirect to signed URL
-    const url = oss.signatureUrl(key, { method: 'GET' })
-    return NextResponse.redirect(url.replace(/^http:/, 'https:'))
+    return new NextResponse(result.content, { headers })
+  } catch (err) {
+    // Fallback: signed URL redirect
+    try {
+      const url = oss.signatureUrl(key, { method: 'GET', expires: 3600 })
+      return NextResponse.redirect(url.replace(/^http:/, 'https:'))
+    } catch {
+      return NextResponse.json({ error: '加载图片失败' }, { status: 500 })
+    }
   }
 }
