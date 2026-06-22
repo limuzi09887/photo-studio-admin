@@ -16,6 +16,6 @@ export default async function AiRetouchPage({
   if (!order) notFound()
 
   return <AiRetouchClient orderId={id} status={order.status}
-    originalFiles={originalFiles.map(f => ({ id: f.id, name: f.fileName, url: f.fileUrl }))}
-    aiFiles={aiFiles.map(f => ({ id: f.id, name: f.fileName, url: f.fileUrl, params: f.aiParams as Record<string, string> | null }))} />
+    originalFiles={originalFiles.map(f => ({ id: f.id, name: f.fileName, url: `/api/files/proxy?fileId=${f.id}` }))}
+    aiFiles={aiFiles.map(f => ({ id: f.id, name: f.fileName, url: `/api/files/proxy?fileId=${f.id}`, params: f.aiParams as Record<string, string> | null }))} />
 }

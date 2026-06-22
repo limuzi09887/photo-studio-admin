@@ -9,6 +9,8 @@ export const oss = new S3Client({
     accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID!,
     secretAccessKey: process.env.ALIYUN_ACCESS_KEY_SECRET!,
   },
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
 })
 
 export const OSS_BUCKET = process.env.OSS_BUCKET!

@@ -29,23 +29,14 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
         newProgress[file.name] = 0
         setProgress({ ...newProgress })
 
-        // 1. Get presigned URL
-        const key = `${orderId}/original/${Date.now()}_${file.name}`
-        const presignedRes = await fetch(`/api/upload-url?key=${encodeURIComponent(key)}&contentType=${encodeURIComponent(file.type)}`)
-        if (!presignedRes.ok) throw new Error('Failed to get upload URL')
-        const { url } = await presignedRes.json()
+        // Upload via server proxy (avoids OSS CORS issues)
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('orderId', orderId)
+        formData.append('fileType', 'ORIGINAL')
 
-        // 2. Upload to R2
-        const uploadRes = await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
         if (!uploadRes.ok) throw new Error('Upload failed')
-
-        // 3. Save record to database
-        const saveRes = await fetch(`/api/orders/${orderId}/files`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key, fileName: file.name, fileSize: file.size, fileType: 'ORIGINAL' }),
-        })
-        if (!saveRes.ok) throw new Error('Failed to save file record')
 
         newProgress[file.name] = 100
         setProgress({ ...newProgress })
@@ -98,7 +89,17 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
         <div className="grid grid-cols-5 gap-3">
           {existingFiles.map((f) => (
             <div key={f.id} className="bg-gray-50 rounded-lg p-2 text-center">
-              <div className="h-20 bg-gray-200 rounded flex items-center justify-center text-2xl">🖼️</div>
+              <div className="h-20 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
+                <img
+                  src={`/api/files/proxy?fileId=${f.id}`}
+                  alt={f.fileName}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none'
+                    ;(e.target as HTMLImageElement).parentElement!.innerHTML = '🖼️'
+                  }}
+                />
+              </div>
               <p className="text-xs mt-1 truncate">{f.fileName}</p>
               <p className="text-[10px] text-gray-400">{formatFileSize(f.fileSize)}</p>
             </div>

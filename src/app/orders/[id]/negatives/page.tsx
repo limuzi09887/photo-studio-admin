@@ -38,7 +38,7 @@ export default async function NegativesPage({
             <div key={f.id} className="bg-gray-50 rounded-lg p-2 text-center">
               <div className="h-24 bg-gray-200 rounded flex items-center justify-center overflow-hidden mb-1">
                 <img
-                  src={f.fileUrl}
+                  src={`/api/files/proxy?fileId=${f.id}`}
                   alt={f.fileName}
                   className="w-full h-full object-cover"
                   loading="lazy"

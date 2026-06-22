@@ -39,3 +39,8 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
+
+/** Get proxy URL for displaying a file image (works even if OSS bucket is private) */
+export function getFileProxyUrl(fileId: string): string {
+  return `/api/files/proxy?fileId=${fileId}`
+}

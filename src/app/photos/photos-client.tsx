@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatFileSize } from '@/lib/utils'
+import { formatFileSize, getFileProxyUrl } from '@/lib/utils'
 
 interface FileItem {
   id: string
@@ -31,8 +31,16 @@ function PhotoGrid({ files }: { files: FileItem[] }) {
           key={f.id}
           className="bg-white rounded-xl border border-gray-100 overflow-hidden"
         >
-          <div className="h-[120px] bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-3xl">
-            🖼️
+          <div className="h-[120px] bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-3xl overflow-hidden">
+            <img
+              src={getFileProxyUrl(f.id)}
+              alt={f.fileName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none'
+                ;(e.target as HTMLImageElement).parentElement!.innerHTML = '🖼️'
+              }}
+            />
           </div>
           <div className="p-3">
             <p className="text-xs font-semibold truncate">{f.fileName}</p>
