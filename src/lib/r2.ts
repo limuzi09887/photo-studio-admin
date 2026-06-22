@@ -2,9 +2,11 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // AliCloud OSS (S3-compatible)
+// With forcePathStyle=false (default), the SDK uses virtual-hosted style:
+// https://{bucket}.oss-cn-shanghai.aliyuncs.com
 export const oss = new S3Client({
-  region: process.env.OSS_REGION!,
-  endpoint: `https://${process.env.OSS_BUCKET!}.${process.env.OSS_REGION!}.aliyuncs.com`,
+  region: 'cn-shanghai',
+  endpoint: 'https://oss-cn-shanghai.aliyuncs.com',
   credentials: {
     accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID!,
     secretAccessKey: process.env.ALIYUN_ACCESS_KEY_SECRET!,
