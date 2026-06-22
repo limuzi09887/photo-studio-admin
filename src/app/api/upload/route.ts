@@ -6,28 +6,45 @@ import { prisma } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  // Step 1: Parse request
+  let formData: FormData
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const orderId = formData.get('orderId') as string | null
-    const fileType = (formData.get('fileType') as string) || 'ORIGINAL'
+    formData = await request.formData()
+  } catch (e) {
+    return NextResponse.json({ error: `表单解析失败: ${e instanceof Error ? e.message : e}` }, { status: 400 })
+  }
 
-    if (!file || !orderId) {
-      return NextResponse.json({ error: '缺少文件或订单ID' }, { status: 400 })
-    }
+  const file = formData.get('file') as File | null
+  const orderId = formData.get('orderId') as string | null
+  const fileType = (formData.get('fileType') as string) || 'ORIGINAL'
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const key = `${orderId}/original/${Date.now()}_${file.name}`
+  if (!file || !orderId) {
+    return NextResponse.json({ error: `缺少参数: file=${!!file} orderId=${!!orderId}` }, { status: 400 })
+  }
 
-    // Upload directly to OSS (server-side, no CORS issues)
+  // Step 2: Read file buffer
+  let buffer: Buffer
+  try {
+    buffer = Buffer.from(await file.arrayBuffer())
+  } catch (e) {
+    return NextResponse.json({ error: `文件读取失败: ${e instanceof Error ? e.message : e}` }, { status: 500 })
+  }
+
+  // Step 3: Upload to OSS
+  const key = `${orderId}/original/${Date.now()}_${file.name}`
+  try {
     await oss.send(new PutObjectCommand({
       Bucket: OSS_BUCKET,
       Key: key,
       Body: buffer,
-      ContentType: file.type,
+      ContentType: file.type || 'image/jpeg',
     }))
+  } catch (e) {
+    return NextResponse.json({ error: `OSS上传失败: ${e instanceof Error ? e.message : e}` }, { status: 500 })
+  }
 
-    // Save file record
+  // Step 4: Save to database
+  try {
     const record = await prisma.orderFile.create({
       data: {
         orderId,
@@ -38,7 +55,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Update order shootTime on first upload
     const order = await prisma.order.findUnique({ where: { id: orderId } })
     if (order && !order.shootTime && fileType === 'ORIGINAL') {
       await prisma.order.update({
@@ -51,8 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, fileId: record.id, fileUrl: getPublicUrl(key) })
-  } catch (error) {
-    console.error('Upload error:', error)
-    return NextResponse.json({ error: '上传失败' }, { status: 500 })
+  } catch (e) {
+    return NextResponse.json({ error: `数据库写入失败: ${e instanceof Error ? e.message : e}` }, { status: 500 })
   }
 }
