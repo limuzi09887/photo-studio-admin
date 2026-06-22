@@ -4,8 +4,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 // AliCloud OSS (S3-compatible)
 export const oss = new S3Client({
   region: process.env.OSS_REGION!,
-  endpoint: process.env.OSS_ENDPOINT!,
-  forcePathStyle: true,
+  endpoint: `https://${process.env.OSS_BUCKET!}.${process.env.OSS_REGION!}.aliyuncs.com`,
   credentials: {
     accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID!,
     secretAccessKey: process.env.ALIYUN_ACCESS_KEY_SECRET!,
