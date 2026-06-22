@@ -3,10 +3,10 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // AliCloud OSS (S3-compatible)
 // With forcePathStyle=false (default), the SDK uses virtual-hosted style:
-// https://{bucket}.oss-cn-shanghai.aliyuncs.com
+// https://{bucket}.s3.oss-cn-shanghai.aliyuncs.com
 export const oss = new S3Client({
   region: 'cn-shanghai',
-  endpoint: 'https://oss-cn-shanghai.aliyuncs.com',
+  endpoint: 'https://s3.oss-cn-shanghai.aliyuncs.com',
   credentials: {
     accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID!,
     secretAccessKey: process.env.ALIYUN_ACCESS_KEY_SECRET!,
