@@ -111,7 +111,7 @@ export function BeforeAfter({ original, retouched, onRetry, onConfirm }: BeforeA
             )}
           </div>
           {retouched.status === '完成' && (
-            <div className="px-4 py-2.5 bg-gray-50 flex items-center justify-between">
+            <div className="px-4 py-2.5 bg-gray-50 flex items-center justify-between flex-wrap gap-1">
               <span className="text-[11px] text-gray-400">
                 🕐 处理耗时 {retouched.processingTime || '--'} 秒
               </span>
@@ -124,6 +124,11 @@ export function BeforeAfter({ original, retouched, onRetry, onConfirm }: BeforeA
                 >
                   ⬇ 下载
                 </a>
+                {onRetry && (
+                  <Button variant="outline" size="sm" onClick={onRetry} className="text-xs">
+                    🔄 重新修图
+                  </Button>
+                )}
                 {onConfirm && (
                   <Button size="sm" onClick={onConfirm} className="bg-indigo-500 hover:bg-indigo-600 text-xs">
                     ✅ 确认

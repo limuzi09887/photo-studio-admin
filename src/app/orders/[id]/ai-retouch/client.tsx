@@ -87,18 +87,26 @@ export function AiRetouchClient({
     setCurrentParams(params)
     setSubmitting(true)
 
-    // Mark all pending pairs as processing
+    // Process ALL pairs (not just '待处理'), skip only those currently processing
+    const toProcess = pairs.filter((p) => p.retouchedStatus !== '处理中')
+
+    if (toProcess.length === 0) {
+      setSubmitting(false)
+      toast.error('没有需要处理的图片')
+      return
+    }
+
+    // Mark all as processing
     setPairs((prev) =>
       prev.map((p) =>
-        p.retouchedStatus === '待处理' ? { ...p, retouchedStatus: '处理中' as RetouchStatus } : p
+        p.retouchedStatus !== '处理中' ? { ...p, retouchedStatus: '处理中' as RetouchStatus, errorMessage: undefined } : p
       )
     )
 
-    const pendingPairs = pairs.filter((p) => p.retouchedStatus === '待处理')
     let successCount = 0
     let failCount = 0
 
-    for (const pair of pendingPairs) {
+    for (const pair of toProcess) {
       try {
         const res = await fetch(`/api/orders/${orderId}/ai-retouch`, {
           method: 'POST',
@@ -146,8 +154,10 @@ export function AiRetouchClient({
     }
 
     setSubmitting(false)
-    if (failCount > 0) {
-      toast.error(`完成 ${successCount}，失败 ${failCount}`)
+    if (successCount === 0 && failCount > 0) {
+      toast.error(`全部失败: ${failCount} 张`)
+    } else if (failCount > 0) {
+      toast.warning(`完成 ${successCount} 张，失败 ${failCount} 张`)
     } else {
       toast.success(`全部 ${successCount} 张 AI 修图完成`)
     }
@@ -282,7 +292,7 @@ export function AiRetouchClient({
               errorMessage: pair.errorMessage,
               processingTime: pair.processingTime,
             }}
-            onRetry={pair.retouchedStatus === '失败' ? () => handleRetry(pair.originalId) : undefined}
+            onRetry={() => handleRetry(pair.originalId)}
           />
         ))}
       </div>
