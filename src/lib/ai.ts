@@ -283,8 +283,13 @@ export async function processImage(
 }
 
 /**
- * Kept for backward compatibility — no longer used internally but exported
- * in case other modules reference it.
+ * 降级方案：sharp 本地处理
+ * 当阿里云 AI API 不可用时，API Route 直接调用 processImage
+ */
+export const sharpFallback = processImage
+
+/**
+ * Kept for backward compatibility
  */
 export async function submitAiRetouch(
   _originalUrl: string,

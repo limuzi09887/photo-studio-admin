@@ -47,7 +47,8 @@ export function AiRetouchClient({
 }) {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
-  const [currentParams, setCurrentParams] = useState<Record<string, string> | null>(null)
+  // 当前使用的背景色（面板中选择，按钮提交时使用）
+  const [currentBgColor, setCurrentBgColor] = useState<string>('white')
 
   // Initialize pairs from originals + existing AI results
   const buildInitialPairs = (): PairState[] => {
@@ -85,7 +86,7 @@ export function AiRetouchClient({
   const [pairs, setPairs] = useState<PairState[]>(buildInitialPairs)
 
   const handleSubmit = useCallback(async (params: Record<string, string>) => {
-    setCurrentParams(params)
+    setCurrentBgColor(params.bgColor || 'white')
     setSubmitting(true)
 
     // Process ALL pairs (not just '待处理'), skip only those currently processing
@@ -114,7 +115,7 @@ export function AiRetouchClient({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             originalFileId: pair.originalId,
-            params,
+            bgColor: params.bgColor || 'white',
           }),
         })
 
@@ -130,7 +131,7 @@ export function AiRetouchClient({
               ? {
                   ...p,
                   retouchedStatus: '完成' as RetouchStatus,
-                  retouchedUrl: `/api/files/proxy?fileId=${data.aiFile.id}`,
+                  retouchedUrl: data.aiFile.viewUrl || `/api/files/proxy?fileId=${data.aiFile.id}`,
                   retouchedName: data.aiFile.fileName,
                   retouchedId: data.aiFile.id,
                   processingTime: data.aiFile.aiParams?.processingTime,
@@ -167,11 +168,6 @@ export function AiRetouchClient({
   }, [orderId, pairs, router])
 
   const handleRetry = useCallback(async (originalId: string) => {
-    if (!currentParams) {
-      toast.error('请先设置修图参数并提交任务')
-      return
-    }
-
     const pair = pairs.find((p) => p.originalId === originalId)
     if (!pair) return
 
@@ -187,7 +183,7 @@ export function AiRetouchClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           originalFileId: originalId,
-          params: currentParams,
+          bgColor: currentBgColor,
         }),
       })
 
@@ -203,7 +199,7 @@ export function AiRetouchClient({
             ? {
                 ...p,
                 retouchedStatus: '完成' as RetouchStatus,
-                retouchedUrl: `/api/files/proxy?fileId=${data.aiFile.id}`,
+                retouchedUrl: data.aiFile.viewUrl || `/api/files/proxy?fileId=${data.aiFile.id}`,
                 retouchedName: data.aiFile.fileName,
                 retouchedId: data.aiFile.id,
                 processingTime: data.aiFile.aiParams?.processingTime,
@@ -227,11 +223,7 @@ export function AiRetouchClient({
       )
       toast.error('重新修图失败')
     }
-  }, [orderId, pairs, currentParams, router])
-
-  const handleReset = useCallback(() => {
-    setCurrentParams(null)
-  }, [])
+  }, [orderId, pairs, currentBgColor, router])
 
   const handleDeleteRetouched = useCallback(async (fileId: string) => {
     try {
@@ -298,7 +290,12 @@ export function AiRetouchClient({
         </div>
       </div>
 
-      <ParamsPanel onSubmit={handleSubmit} onReset={handleReset} disabled={submitting} />
+      <ParamsPanel
+        onSubmit={handleSubmit}
+        disabled={submitting}
+        bgColor={currentBgColor}
+        onBgColorChange={setCurrentBgColor}
+      />
 
       {pairs.length === 0 && (
         <div className="text-center py-12 text-gray-400">

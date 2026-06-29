@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { getSignedImageUrl } from '@/lib/r2'
 import { PhotoGrid } from '@/components/orders/photo-grid'
 
 export default async function NegativesPage({
@@ -27,7 +28,12 @@ export default async function NegativesPage({
           <Button className="bg-indigo-500 hover:bg-indigo-600 text-sm">再次修图</Button>
         </Link>
       </div>
-      <PhotoGrid showDelete files={files.map(f => ({ id: f.id, fileName: f.fileName, fileSize: f.fileSize }))} />
+      <PhotoGrid showDelete files={files.map(f => ({
+        id: f.id,
+        fileName: f.fileName,
+        fileSize: f.fileSize,
+        srcUrl: getSignedImageUrl(f.fileUrl, 400),
+      }))} />
     </div>
   )
 }

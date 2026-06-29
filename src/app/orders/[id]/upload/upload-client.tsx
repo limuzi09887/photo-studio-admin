@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ThumbCard } from '@/components/orders/thumb-card'
@@ -13,6 +13,7 @@ interface FileInfo {
   fileName: string
   fileUrl: string
   fileSize: number
+  srcUrl?: string
 }
 
 export function UploadClient({ orderId, existingFiles }: { orderId: string; existingFiles: FileInfo[] }) {
@@ -25,6 +26,13 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
+  // 当服务器数据刷新时（如删除后上传新照片），同步本地状态
+  useEffect(() => {
+    if (!uploading) {
+      setFiles(existingFiles)
+    }
+  }, [existingFiles, uploading])
+
   async function handleDelete(fileId: string) {
     try {
       const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
@@ -32,6 +40,7 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
       setFiles((prev) => prev.filter((f) => f.id !== fileId))
       clearSelection()
       toast.success('已删除')
+      router.refresh()
     } catch {
       toast.error('删除失败，请重试')
     }
@@ -130,6 +139,7 @@ export function UploadClient({ orderId, existingFiles }: { orderId: string; exis
                 fileId={f.id}
                 fileName={f.fileName}
                 fileSize={f.fileSize}
+                srcUrl={f.srcUrl}
                 onClick={() => {
                   if (selectMode) {
                     toggleSelect(f.id)

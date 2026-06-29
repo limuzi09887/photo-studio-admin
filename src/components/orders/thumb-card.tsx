@@ -7,6 +7,7 @@ interface ThumbCardProps {
   fileId: string
   fileName: string
   fileSize: number | bigint
+  srcUrl?: string // OSS签名URL（直连，替代代理）
   extraInfo?: string
   onClick?: () => void
   ringColor?: string
@@ -20,6 +21,7 @@ export function ThumbCard({
   fileId,
   fileName,
   fileSize,
+  srcUrl,
   extraInfo,
   onClick,
   ringColor = 'hover:ring-indigo-400',
@@ -62,7 +64,7 @@ export function ThumbCard({
           <span className="text-3xl text-gray-300">🖼️</span>
         ) : (
           <img
-            src={`/api/files/proxy?fileId=${fileId}`}
+            src={srcUrl || `/api/files/proxy?fileId=${fileId}`}
             alt={fileName}
             className="w-full h-full object-cover"
             loading="lazy"
@@ -94,16 +96,15 @@ export function ThumbCard({
         {onDelete && (
           <button
             disabled={deleting}
-            className={`flex items-center justify-center gap-1 mt-1 py-1.5 rounded-md text-xs transition-colors w-full ${
+            className={`flex items-center justify-center gap-1 mt-1 py-1.5 rounded-md text-xs transition-colors w-full font-medium ${
               confirmDelete
                 ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500'
+                : 'bg-red-50 hover:bg-red-100 text-red-500 border border-red-200'
             }`}
             onClick={async (e) => {
               e.stopPropagation()
               if (!confirmDelete) {
                 setConfirmDelete(true)
-                // Auto-cancel after 3 seconds
                 setTimeout(() => setConfirmDelete(false), 3000)
                 return
               }
@@ -111,7 +112,7 @@ export function ThumbCard({
               onDelete(fileId)
             }}
           >
-            {deleting ? '删除中...' : confirmDelete ? '⚠ 确认删除' : '🗑 删除'}
+            {deleting ? '删除中...' : confirmDelete ? '⚠ 确认删除' : '🗑 删除照片'}
           </button>
         )}
       </div>

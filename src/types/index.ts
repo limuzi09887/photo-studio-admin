@@ -12,11 +12,10 @@ export type PaymentMethod = '微信支付' | '支付宝' | '现金' | '银行转
 
 export type PaymentType = '定金' | '尾款'
 
+/** AI 修图参数（简化版 — 一键AI优化 + 可选背景色） */
 export type AiRetouchParams = {
-  bgColor: string
-  clarity: string
-  brightness: string
-  skinSmooth: string
+  /** 背景色选择: 'white' | 'blue' | 'red' | 'keep' */
+  bgColor: 'white' | 'blue' | 'red' | 'keep'
 }
 
 export type ProgressStep = 0 | 1 | 2 | 3 | 4

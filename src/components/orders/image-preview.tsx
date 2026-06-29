@@ -6,6 +6,7 @@ interface PreviewFile {
   id: string
   fileName: string
   fileSize: number | bigint
+  srcUrl?: string // OSS签名URL（直连）
 }
 
 export function ImagePreview({
@@ -29,7 +30,7 @@ export function ImagePreview({
         ✕
       </button>
       <img
-        src={`/api/files/proxy?fileId=${file.id}`}
+        src={file.srcUrl || `/api/files/proxy?fileId=${file.id}`}
         alt={file.fileName}
         className="max-w-[90vw] max-h-[90vh] object-contain"
         onClick={(e) => e.stopPropagation()}

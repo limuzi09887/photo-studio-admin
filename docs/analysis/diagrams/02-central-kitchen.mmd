@@ -1,0 +1,38 @@
+graph LR
+    subgraph 门店["📸 照相馆门店"]
+        A1["门店 A<br/>上传原图"]
+        A2["门店 B<br/>上传原图"]
+        A3["门店 C<br/>上传原图"]
+    end
+
+    subgraph CentralKitchen["🔥 Central Kitchen 中央厨房"]
+        B["📋 任务队列<br/>按修图师等级智能分配"]
+
+        subgraph AI层["🤖 AI 自动初修"]
+            D["阿里云视觉智能 API<br/>• 人脸美颜<br/>• 背景替换<br/>• 清晰度增强<br/>• 自动裁剪"]
+        end
+
+        subgraph 人工层["👨‍🎨 人工精修团队"]
+            C1["一级修图师<br/>👤 初级<br/>处理简单证件照"]
+            C2["二级修图师<br/>👤 中级<br/>处理商务照"]
+            C3["三级修图师<br/>👤 高级<br/>处理婚纱写真"]
+            C4["四级修图师<br/>👤 专家<br/>处理高端定制"]
+        end
+    end
+
+    subgraph 通知["📡 结果通知"]
+        E["WebSocket<br/>实时推送修图状态"]
+        F["门店收到成片<br/>✅ 可下载交付客户"]
+    end
+
+    A1 & A2 & A3 -->|"上传原图"| B
+    B -->|"所有任务先经AI"| D
+    D -->|"AI初修完成"| B
+    B -->|"按等级+负载分发"| C1 & C2 & C3 & C4
+    C1 & C2 & C3 & C4 -->|"人工精修完成"| E
+    E -->|"推送通知"| F
+
+    style B fill:#fff3e0,stroke:#e65100
+    style D fill:#e8eaf6,stroke:#283593
+    style E fill:#e0f2f1,stroke:#00695c
+    style F fill:#c8e6c9,stroke:#2e7d32

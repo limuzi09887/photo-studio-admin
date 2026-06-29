@@ -44,7 +44,7 @@ async function sendEmail(formData: FormData) {
       html: body.replace(/\n/g, '<br />'),
       attachments: finalFiles.map((f) => ({
         filename: f.fileName,
-        path: f.fileUrl,
+        fileUrl: f.fileUrl,
       })),
     })
 

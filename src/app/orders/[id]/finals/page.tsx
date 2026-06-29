@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
+import { getSignedImageUrl } from '@/lib/r2'
 import { FinalsClient } from './finals-client'
 import { formatFileSize } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ export default async function FinalsPage({
           fileName: f.fileName,
           fileUrl: f.fileUrl,
           fileSize: Number(f.fileSize),
+          srcUrl: getSignedImageUrl(f.fileUrl, 400),
         }))}
       />
     </div>

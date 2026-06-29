@@ -1,0 +1,35 @@
+graph TB
+    subgraph 客户端["🖥️ 客户端"]
+        U["📤 上传照片<br/>批量/拖拽"]
+        V["📥 查看/下载照片<br/>缩略图 + 大图预览"]
+    end
+
+    subgraph 后端代理["🔒 后端代理层"]
+        P["PHP 图片代理<br/>/download/oss_img<br/>• 权限校验<br/>• 水印添加<br/>• 下载日志"]
+    end
+
+    subgraph OSS["☁️ 阿里云 OSS 存储"]
+        direction TB
+        OSS_Root["fk-halo.oss-cn-shanghai.aliyuncs.com"]
+
+        S1["📦 静态资源<br/>/light_halo/<br/>├── css/ (样式)<br/>├── images/ (Logo/图标)<br/>└── audio/ (提示音)"]
+
+        S2["📸 业务照片<br/>/orders/业务数据/<br/>├── original/ (原图)<br/>├── ai_result/ (AI修图)<br/>└── final/ (最终成片)"]
+    end
+
+    subgraph CDN["⚡ CDN 加速"]
+        CDN_Node["阿里云 CDN<br/>全国节点加速"]
+    end
+
+    U -->|"直传 OSS (预签名URL)"| OSS_Root
+    OSS_Root --> S1
+    OSS_Root --> S2
+    S1 --> CDN_Node
+    S2 --> CDN_Node
+    V -->|"请求图片"| P
+    P -->|"鉴权后获取"| CDN_Node
+    CDN_Node -->|"回源"| OSS_Root
+
+    style OSS_Root fill:#e8f5e9,stroke:#2e7d32
+    style P fill:#fff3e0,stroke:#e65100
+    style CDN_Node fill:#e1f5fe,stroke:#01579b

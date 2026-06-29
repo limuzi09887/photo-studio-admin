@@ -11,6 +11,7 @@ interface FileItem {
   id: string
   fileName: string
   fileSize: bigint
+  srcUrl?: string
 }
 
 export function PhotoGrid({
@@ -67,6 +68,7 @@ export function PhotoGrid({
             fileId={f.id}
             fileName={f.fileName}
             fileSize={f.fileSize}
+            srcUrl={f.srcUrl}
             onClick={() => {
               if (selectMode) {
                 toggleSelect(f.id)

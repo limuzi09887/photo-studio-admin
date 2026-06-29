@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getSignedImageUrl } from '@/lib/r2'
 import { PhotosClient } from './photos-client'
 
 export const dynamic = 'force-dynamic'
@@ -29,10 +30,16 @@ export default async function PhotosPage() {
     }),
   ])
 
+  // 给每个文件生成签名URL
+  const withSrcUrl = (f: typeof originals[number]) => ({
+    ...f,
+    srcUrl: getSignedImageUrl(f.fileUrl, 400),
+  })
+
   const tabs = [
-    { key: 'originals', label: '📷 今日原片', count: originals.length, files: originals },
-    { key: 'aiResults', label: '✨ 今日成片', count: aiResults.length, files: aiResults },
-    { key: 'finals', label: '📋 今日底片', count: finals.length, files: finals },
+    { key: 'originals', label: '📷 今日原片', count: originals.length, files: originals.map(withSrcUrl) },
+    { key: 'aiResults', label: '✨ 今日成片', count: aiResults.length, files: aiResults.map(withSrcUrl) },
+    { key: 'finals', label: '📋 今日底片', count: finals.length, files: finals.map(withSrcUrl) },
   ]
 
   return (

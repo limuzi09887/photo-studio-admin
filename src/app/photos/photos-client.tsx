@@ -15,6 +15,7 @@ interface FileItem {
   fileType: string
   createdAt: Date
   order: { orderNo: string }
+  srcUrl?: string
 }
 
 interface Tab {
@@ -70,6 +71,7 @@ function PhotoGrid({ files: initialFiles }: { files: FileItem[] }) {
             fileId={f.id}
             fileName={f.fileName}
             fileSize={f.fileSize}
+            srcUrl={f.srcUrl}
             extraInfo={f.order.orderNo}
             onClick={() => {
               if (selectMode) {
