@@ -270,12 +270,12 @@ export function ReportsClient({
       <Card className="mb-8">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">每日明细</CardTitle>
-          <button
-            onClick={() => alert('导出功能即将上线')}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          <a
+            href={`/api/reports/export?from=${from}&to=${to}`}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
           >
-            导出
-          </button>
+            📥 导出 CSV
+          </a>
         </CardHeader>
         <CardContent>
           {dailyData.length === 0 ? (

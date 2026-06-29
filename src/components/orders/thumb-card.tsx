@@ -10,6 +10,10 @@ interface ThumbCardProps {
   extraInfo?: string
   onClick?: () => void
   ringColor?: string
+  onDelete?: (fileId: string) => void
+  selectable?: boolean
+  selected?: boolean
+  onSelect?: (fileId: string) => void
 }
 
 export function ThumbCard({
@@ -19,9 +23,15 @@ export function ThumbCard({
   extraInfo,
   onClick,
   ringColor = 'hover:ring-indigo-400',
+  onDelete,
+  selectable,
+  selected = false,
+  onSelect,
 }: ThumbCardProps) {
   const [dims, setDims] = useState<string | null>(null)
   const [error, setError] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   return (
     <div
@@ -29,6 +39,25 @@ export function ThumbCard({
       onClick={onClick}
     >
       <div className="aspect-[3/4] bg-gray-100 flex items-center justify-center overflow-hidden relative">
+        {selectable && (
+          <div
+            className="absolute top-2 left-2 z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelect?.(fileId)
+            }}
+          >
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                selected
+                  ? 'bg-indigo-500 border-indigo-500 text-white'
+                  : 'bg-white/80 border-gray-300 hover:border-indigo-400'
+              }`}
+            >
+              {selected && <span className="text-xs leading-none">✓</span>}
+            </div>
+          </div>
+        )}
         {error ? (
           <span className="text-3xl text-gray-300">🖼️</span>
         ) : (
@@ -62,6 +91,29 @@ export function ThumbCard({
         >
           ⬇ 下载
         </a>
+        {onDelete && (
+          <button
+            disabled={deleting}
+            className={`flex items-center justify-center gap-1 mt-1 py-1.5 rounded-md text-xs transition-colors w-full ${
+              confirmDelete
+                ? 'bg-red-500 text-white hover:bg-red-600'
+                : 'bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500'
+            }`}
+            onClick={async (e) => {
+              e.stopPropagation()
+              if (!confirmDelete) {
+                setConfirmDelete(true)
+                // Auto-cancel after 3 seconds
+                setTimeout(() => setConfirmDelete(false), 3000)
+                return
+              }
+              setDeleting(true)
+              onDelete(fileId)
+            }}
+          >
+            {deleting ? '删除中...' : confirmDelete ? '⚠ 确认删除' : '🗑 删除'}
+          </button>
+        )}
       </div>
     </div>
   )

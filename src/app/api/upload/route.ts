@@ -52,14 +52,24 @@ export async function POST(request: NextRequest) {
     })
 
     const order = await prisma.order.findUnique({ where: { id: orderId } })
-    if (order && !order.shootTime && fileType === 'ORIGINAL') {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          shootTime: new Date(),
-          status: order.status === '已创建' ? '已拍摄' : undefined,
-        },
-      })
+    if (order) {
+      // 原图上传 → 已拍摄
+      if (!order.shootTime && fileType === 'ORIGINAL') {
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            shootTime: new Date(),
+            status: order.status === '已创建' ? '已拍摄' : undefined,
+          },
+        })
+      }
+      // 成片上传 → 已完成
+      if (fileType === 'FINAL' && order.status === '修图完成') {
+        await prisma.order.update({
+          where: { id: orderId },
+          data: { status: '已完成' },
+        })
+      }
     }
 
     return NextResponse.json({ success: true, fileId: record.id, fileUrl: getPublicUrl(key) })

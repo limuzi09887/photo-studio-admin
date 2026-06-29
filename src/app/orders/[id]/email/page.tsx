@@ -78,13 +78,18 @@ export default async function EmailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const order = await prisma.order.findUnique({
-    where: { id },
-    include: {
-      customer: true,
-      emailRecords: { orderBy: { sentAt: 'desc' } },
-    },
-  })
+  const [order, templates] = await Promise.all([
+    prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        emailRecords: { orderBy: { sentAt: 'desc' } },
+      },
+    }),
+    prisma.emailTemplate.findMany({
+      orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+    }),
+  ])
   if (!order) notFound()
 
   const finalFiles = await prisma.orderFile.findMany({
@@ -92,7 +97,7 @@ export default async function EmailPage({
     orderBy: { createdAt: 'desc' },
   })
 
-  // Build default subject and body with variable substitution
+  // Build variable substitution map
   const variables: Record<string, string> = {
     '{{客户姓名}}': order.customer.name,
     '{{订单号}}': order.orderNo,
@@ -103,8 +108,10 @@ export default async function EmailPage({
     '{{成片数量}}': `${finalFiles.length} 张`,
   }
 
-  const defaultSubject = `您拍摄的照片已完成 - 订单 ${order.orderNo}`
-  const defaultBody = `尊敬的 {{客户姓名}}：
+  // Use default template or fallback
+  const defaultTemplate = templates.find((t) => t.isDefault)
+  const defaultSubject = defaultTemplate?.subject || `您拍摄的照片已完成 - 订单 ${order.orderNo}`
+  const defaultBody = defaultTemplate?.body || `尊敬的 {{客户姓名}}：
 
 您好！您的照片已经完成精修处理。
 
@@ -117,16 +124,15 @@ export default async function EmailPage({
 
 祝好！`
 
-  // Replace variables in body
-  const previewBody = Object.entries(variables).reduce(
-    (text, [variable, value]) => text.replaceAll(variable, value),
-    defaultBody
-  )
+  // Replace variables for preview
+  const replaceVars = (text: string) =>
+    Object.entries(variables).reduce(
+      (txt, [variable, value]) => txt.replaceAll(variable, value),
+      text
+    )
 
-  const previewSubject = Object.entries(variables).reduce(
-    (text, [variable, value]) => text.replaceAll(variable, value),
-    defaultSubject
-  )
+  const previewBody = replaceVars(defaultBody)
+  const previewSubject = replaceVars(defaultSubject)
 
   return (
     <div className="space-y-6">
@@ -134,8 +140,36 @@ export default async function EmailPage({
       <div className="bg-white rounded-2xl p-7 border border-gray-100">
         <h3 className="text-lg font-bold mb-5">邮件发送</h3>
 
-        <form action={sendEmail} className="space-y-4 max-w-2xl">
+        <form action={sendEmail} className="space-y-4 max-w-2xl" id="emailForm">
           <input type="hidden" name="orderId" value={id} />
+
+          {/* Template Selector */}
+          {templates.length > 0 && (
+            <div>
+              <Label htmlFor="templateSelect">选择模板</Label>
+              <select
+                id="templateSelect"
+                className="w-full mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                onChange={(e) => {
+                  const t = templates.find((tpl) => tpl.id === e.target.value)
+                  if (t) {
+                    const subjectInput = document.getElementById('subject') as HTMLInputElement
+                    const bodyInput = document.getElementById('body') as HTMLTextAreaElement
+                    if (subjectInput) subjectInput.value = (window as any).replaceVarsClient(t.subject)
+                    if (bodyInput) bodyInput.value = (window as any).replaceVarsClient(t.body)
+                  }
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>选择邮件模板...</option>
+                {templates.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.name}{tpl.isDefault ? ' (默认)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="email">收件人邮箱</Label>
@@ -197,6 +231,36 @@ export default async function EmailPage({
 
           <SendButton />
         </form>
+
+        {/* Client-side template selector logic */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__emailVars = ${JSON.stringify(variables)};
+              window.__emailTemplates = ${JSON.stringify(
+                templates.map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  subject: t.subject,
+                  body: t.body,
+                  isDefault: t.isDefault,
+                }))
+              )};
+            `,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function replaceVarsClient(text) {
+                var vars = window.__emailVars || {};
+                return Object.entries(vars).reduce(function(txt, entry) {
+                  return txt.replaceAll(entry[0], entry[1]);
+                }, text);
+              }
+            `,
+          }}
+        />
       </div>
 
       {/* Send History */}

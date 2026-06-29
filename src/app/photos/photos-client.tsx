@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { ThumbCard } from '@/components/orders/thumb-card'
 import { ImagePreview } from '@/components/orders/image-preview'
+import { BatchToolbar } from '@/components/orders/batch-toolbar'
+import { useBatchSelect } from '@/lib/use-batch-select'
 
 interface FileItem {
   id: string
@@ -21,14 +24,45 @@ interface Tab {
   files: FileItem[]
 }
 
-function PhotoGrid({ files }: { files: FileItem[] }) {
+function PhotoGrid({ files: initialFiles }: { files: FileItem[] }) {
+  const [files, setFiles] = useState(initialFiles)
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const { selectedIds, selectedSet, toggleSelect, clearSelection } = useBatchSelect()
+
+  async function handleDelete(fileId: string) {
+    try {
+      const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('删除失败')
+      setFiles((prev) => prev.filter((f) => f.id !== fileId))
+      clearSelection()
+      toast.success('已删除')
+    } catch {
+      toast.error('删除失败，请重试')
+    }
+  }
 
   if (files.length === 0)
     return <p className="text-center text-gray-400 py-16">暂无照片</p>
 
   return (
     <>
+      <div className="flex items-center justify-end mb-3">
+        <button
+          className={`text-xs px-3 py-1.5 rounded-md transition-colors ${
+            selectMode
+              ? 'bg-indigo-100 text-indigo-600'
+              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          }`}
+          onClick={() => {
+            setSelectMode(!selectMode)
+            clearSelection()
+          }}
+        >
+          {selectMode ? '退出选择' : '☐ 批量选择'}
+        </button>
+      </div>
+
       <div className="grid grid-cols-4 gap-4">
         {files.map((f) => (
           <ThumbCard
@@ -37,10 +71,31 @@ function PhotoGrid({ files }: { files: FileItem[] }) {
             fileName={f.fileName}
             fileSize={f.fileSize}
             extraInfo={f.order.orderNo}
-            onClick={() => setPreviewFile(f)}
+            onClick={() => {
+              if (selectMode) {
+                toggleSelect(f.id)
+              } else {
+                setPreviewFile(f)
+              }
+            }}
+            onDelete={handleDelete}
+            selectable={selectMode}
+            selected={selectedSet.has(f.id)}
+            onSelect={toggleSelect}
           />
         ))}
       </div>
+
+      <BatchToolbar
+        selectedIds={selectedIds}
+        onClear={clearSelection}
+        onDeleted={() => {
+          setFiles((prev) =>
+            prev.filter((f) => !selectedIds.includes(f.id))
+          )
+        }}
+      />
+
       {previewFile && (
         <ImagePreview file={previewFile} onClose={() => setPreviewFile(null)} extraInfo={previewFile.order.orderNo} />
       )}

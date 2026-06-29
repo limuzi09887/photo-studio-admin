@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/customers', label: '客资', icon: '👥' },
   { href: '/photos', label: '照片', icon: '🖼️' },
   { href: '/reports', label: '报表', icon: '📈' },
+  { href: '/settings', label: '设置', icon: '⚙️' },
 ]
 
 export function Sidebar() {

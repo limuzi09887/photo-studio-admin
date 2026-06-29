@@ -1,8 +1,8 @@
 # 照相馆经营管理系统 — 项目交接文档
 
 > 生成时间：2026-06-22  
-> 最后部署：commit `3edcae4`  
-> 生产地址：`https://photo-studio-admin-iota.vercel.app`
+> 最后更新：session 2026-06-22  
+> 部署地址：`https://photo-studio-admin-iota.vercel.app`
 
 ---
 
@@ -124,38 +124,48 @@ src/
 │   ├── page.tsx                 # 首页仪表盘
 │   ├── api/
 │   │   ├── upload/route.ts      # 服务端上传代理（避免浏览器 CORS）
-│   │   ├── files/proxy/route.ts # 图片代理 + 下载支持
+│   │   ├── files/
+│   │   │   ├── [id]/route.ts    # DELETE 删除单个文件
+│   │   │   ├── batch-delete/route.ts  # POST 批量删除
+│   │   │   └── proxy/route.ts   # 图片代理 + 下载支持
+│   │   ├── reports/export/route.ts    # GET CSV 报表导出
 │   │   └── orders/[id]/ai-retouch/route.ts  # AI 修图 API
 │   ├── orders/
 │   │   ├── [id]/
 │   │   │   ├── layout.tsx       # 订单详情 8 步导航
 │   │   │   ├── page.tsx         # ① 订单摘要（含取消按钮）
+│   │   │   ├── customer/        # ② 客户信息
+│   │   │   ├── billing/         # ③ 账单/收款
 │   │   │   ├── upload/          # ④ 原图上传
 │   │   │   ├── ai-retouch/      # ⑤ AI 修图（一类修片）
 │   │   │   ├── negatives/       # ⑥ 修图底片
 │   │   │   ├── finals/          # ⑦ 成片管理
-│   │   │   └── email/           # ⑧ 邮件发送
+│   │   │   └── email/           # ⑧ 邮件发送（含模板选择器）
 │   │   └── new/                 # 新建订单
-│   └── photos/                  # 照片总览
+│   ├── photos/                  # 照片总览
+│   └── settings/                # ⚙️ 系统设置（新增）
+│       ├── layout.tsx           # 设置子导航
+│       ├── shoot-types/         # 拍摄类型管理 CRUD
+│       └── email-templates/     # 邮件模板管理 CRUD
 ├── components/
 │   ├── ui/                      # shadcn/ui 组件
-│   │   ├── select.tsx           # 下拉框（SelectTrigger bg-white）
-│   │   ├── dialog.tsx           # 弹窗（bg-white + 无遮罩）
-│   │   └── ...
 │   ├── orders/
-│   │   ├── thumb-card.tsx        # 缩略图卡片（像素尺寸+下载）
+│   │   ├── thumb-card.tsx        # 缩略图卡片（选择/删除/下载）
 │   │   ├── image-preview.tsx     # 全屏大图预览
-│   │   ├── photo-grid.tsx        # 照片网格
+│   │   ├── photo-grid.tsx        # 照片网格（批量选择）
+│   │   ├── batch-toolbar.tsx     # 批量操作浮动工具栏（新增）
 │   │   └── cancel-order-button.tsx
 │   └── ai-retouch/
 │       ├── params-panel.tsx      # 修图参数面板
 │       └── before-after.tsx      # 前后对比组件
 ├── lib/
-│   ├── ai.ts                    # AI 修图引擎（sharp + chroma-key）
+│   ├── ai.ts                    # AI 修图引擎（sharp + chroma-key + 自动降采样）
 │   ├── r2.ts                    # OSS 客户端（ali-oss SDK）
-│   └── db.ts                    # Prisma 客户端
+│   ├── db.ts                    # Prisma 客户端
+│   └── use-batch-select.ts      # 批量选择 Hook（新增）
 └── types/
-    └── ali-oss.d.ts             # ali-oss 类型声明
+    ├── ali-oss.d.ts             # ali-oss 类型声明（含 delete）
+    └── index.ts                 # 共享类型（OrderStatus 已同步）
 ```
 
 ---
@@ -222,12 +232,14 @@ src/
 
 - [x] 订单 CRUD（创建、列表、详情、取消）
 - [x] 订单 8 步工作流导航
-- [x] 原图上传（服务端代理 → OSS）
+- [x] ② 客户信息页面（表单编辑 + 手机/邮箱/备注）
+- [x] ③ 账单/收款页面（产品明细 + 收款记录 + 汇总卡片）
+- [x] 原图上传（服务端代理 → OSS）+ 自动推进状态
 - [x] 图片代理显示（/api/files/proxy → oss.get()）
 - [x] 图片下载（Content-Disposition + download 属性）
-- [x] 缩略图卡片（像素尺寸、文件大小、下载按钮）
+- [x] 缩略图卡片（像素尺寸、文件大小、下载/删除按钮）
 - [x] 全屏大图预览（ImagePreview）
-- [x] 成片管理（finals 上传和展示）
+- [x] 成片管理（finals 上传和展示）→ 自动完成订单
 - [x] 修图底片展示
 - [x] 照片总览页面
 - [x] AI 修图（一类修片）— 真实图像处理
@@ -235,26 +247,28 @@ src/
   - [x] 清晰度增强（sharp.sharpen）
   - [x] 肤色匀称/磨皮（blur + sharpen 模拟双边滤波）
   - [x] 背景色替换（chroma-key 色度键检测 + flatten）
+  - [x] 大图自动降采样（>20MP → ~12MP 防超时）
+- [x] ⑧ 邮件发送（SMTP + 附件 + 变量替换 + 发送历史）
+- [x] 邮件模板管理 CRUD + 模板选择器
 - [x] 全局透明 UI 修复（tailwind.config.ts hsl→var）
 - [x] Select/Dialog 等 shadcn 组件实色背景
-- [x] 取消订单按钮 + 确认弹窗
-- [x] 取消订单弹窗无遮罩（bg-transparent overlay）
-- [x] Vercel 环境变量配置
-- [x] 邮箱 SMTP 配置
+- [x] 取消订单按钮 + 确认弹窗（无遮罩）
+- [x] Vercel 环境变量配置 + 邮箱 SMTP 配置
+- [x] **图片删除功能**（单个 + 批量，OSS + DB 同步删除）
+- [x] **批量选择 + 批量删除**（浮动工具栏）
+- [x] **设置页面**（拍摄类型管理 + 邮件模板管理）
+- [x] **报表 CSV 导出**（替换占位 alert）
+- [x] **订单状态自动流转**（上传原图→已拍摄，AI修图→AI修图中，确认→修图完成，上传成片→已完成）
+- [x] 进度条状态映射同步 + 已取消订单显示
 
 ---
 
-## 七、未完成 / 待测试
+## 七、待测试 / 后续优化
 
-- [ ] **AI 修图背景替换效果验证** — chroma-key 算法已实现，需用真实影棚照片测试准确率
-- [ ] **AI 修图处理速度** — Vercel Hobby 计划有 10 秒超时，大尺寸照片可能超时
-- [ ] **邮件发送功能** — SMTP 已配置，但邮件模板和发送逻辑需测试
-- [ ] **账单/收款页面** — ③ 账单/收款可能还未完整实现
-- [ ] **客户信息页面** — ② 客户信息需确认完整性
-- [ ] **sharp 在 Vercel 上的运行时兼容性** — 已部署但未生产级验证
-- [ ] **订单状态流转自动化** — 部分状态变更可能仍需手动触发
-- [ ] **图片删除功能** — 暂无删除已上传照片的功能
-- [ ] **批量操作** — 暂无批量上传/下载/删除
+- [ ] **AI 修图效果验证** — chroma-key 算法需用真实影棚照片测试准确率
+- [ ] **sharp Vercel 兼容性** — 已实现大图自动降采样，需生产验证
+- [ ] **邮件发送功能** — 需用真实 SMTP 发送测试
+- [ ] **批量下载** — 目前支持单文件下载 + 批量删除，批量打包下载未实现
 
 ---
 
@@ -285,21 +299,46 @@ model OrderFile {
 
 ## 九、后续工作建议
 
-1. **新对话启动方式**：告诉 Claude "继续 photo-studio-admin 项目开发"，附上本文档路径 `d:\VSCodeCache\code\Code\photo-studio-admin\PROJECT_HANDOFF.md`
-2. **每次部署后**：等待 Vercel 构建完成（约 1-2 分钟），然后测试
-3. **本地测试优先**：`npm run dev` → `curl --noproxy localhost` 验证
-4. **TypeScript 检查**：提交前跑 `npx tsc --noEmit`
-5. **不要直接改 Vercel 上的代码**：通过 Git push 部署
+1. **新对话启动方式**：告诉 Claude "继续 photo-studio-admin 项目开发"，附上本文档路径
+2. **权限已配置**：`.claude/settings.json` 已设置 `acceptEdits` 模式 + Bash/npm/git 白名单，权限弹窗大幅减少
+3. **每次部署后**：等待 Vercel 构建完成（约 1-2 分钟），然后测试
+4. **本地测试优先**：`npm run dev` → 浏览器打开测试
+5. **TypeScript 检查**：提交前跑 `npx tsc --noEmit`
+6. **提交代码**：`git add . && git commit -m "feat: ..." && git push`
 
 ---
 
 ## 十、Git 提交历史（最近 6 次）
 
 ```
-3edcae4 fix: 移除有害的tint()背景替换,实现真正的色度键(chroma-key)背景分离
-a2561a3 fix: 提交修图处理全部图片(不仅是待处理) + 已完成可重新修图
-f4018a7 fix: AI修图API增强 - 详细错误日志 + 健壮OSS key提取 + 客户端错误展示
-b5d107e fix: AI修图结果 - 代理URL + 300px大缩略图 + 点击放大 + 下载
-44add32 feat: 实现真正的AI修图功能 - sharp服务端图像处理
-670ade9 fix: 修复所有下拉框/弹窗透明问题 - hsl()与oklch()不兼容
+（本次开发尚未提交。建议提交信息：）
+feat: 图片删除(单个+批量) + 设置页面 + 报表导出 + 状态流转自动化 + AI修图优化
 ```
+
+**本次新增/修改文件清单：**
+
+| 操作 | 文件 |
+|------|------|
+| 新增 | `src/app/api/files/[id]/route.ts` — DELETE 单文件删除 |
+| 新增 | `src/app/api/files/batch-delete/route.ts` — POST 批量删除 |
+| 新增 | `src/app/api/reports/export/route.ts` — GET CSV 报表导出 |
+| 新增 | `src/app/settings/layout.tsx` — 设置子导航 |
+| 新增 | `src/app/settings/page.tsx` — 重定向 |
+| 新增 | `src/app/settings/shoot-types/page.tsx` — 拍摄类型 CRUD |
+| 新增 | `src/app/settings/email-templates/page.tsx` — 邮件模板 CRUD |
+| 新增 | `src/components/orders/batch-toolbar.tsx` — 批量操作工具栏 |
+| 新增 | `src/lib/use-batch-select.ts` — 批量选择 Hook |
+| 修改 | `src/components/orders/thumb-card.tsx` — 删除按钮 + 选择框 |
+| 修改 | `src/components/orders/photo-grid.tsx` — 批量选择支持 |
+| 修改 | `src/app/orders/[id]/upload/upload-client.tsx` — 删除 + 批量选择 |
+| 修改 | `src/app/orders/[id]/finals/finals-client.tsx` — 删除 + 批量选择 |
+| 修改 | `src/app/orders/[id]/negatives/page.tsx` — 开启删除 |
+| 修改 | `src/app/photos/photos-client.tsx` — 删除 + 批量选择 |
+| 修改 | `src/app/orders/[id]/email/page.tsx` — 模板选择器 |
+| 修改 | `src/app/reports/reports-client.tsx` — CSV 导出按钮 |
+| 修改 | `src/app/api/upload/route.ts` — FINAL 上传自动完成 |
+| 修改 | `src/components/orders/progress-bar.tsx` — 状态同步 + 已取消 |
+| 修改 | `src/components/layout/sidebar.tsx` — 设置入口 |
+| 修改 | `src/types/index.ts` — OrderStatus/ProgressStep 同步 |
+| 修改 | `src/types/ali-oss.d.ts` — 添加 delete 方法 |
+| 修改 | `src/lib/ai.ts` — 大图自动降采样 |

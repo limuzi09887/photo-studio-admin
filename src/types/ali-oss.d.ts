@@ -37,6 +37,7 @@ declare module 'ali-oss' {
     put(key: string, content: Buffer | string, options?: Record<string, unknown>): Promise<PutObjectResult>
     get(key: string): Promise<GetObjectResult>
     getStream(key: string): Promise<GetStreamResult>
+    delete(key: string): Promise<void>
     signatureUrl(key: string, options?: { method?: string; expires?: number }): string
     getBucketInfo(): Promise<{ bucket: Record<string, unknown> }>
   }

@@ -27,7 +27,7 @@ export default async function NegativesPage({
           <Button className="bg-indigo-500 hover:bg-indigo-600 text-sm">再次修图</Button>
         </Link>
       </div>
-      <PhotoGrid files={files.map(f => ({ id: f.id, fileName: f.fileName, fileSize: f.fileSize }))} />
+      <PhotoGrid showDelete files={files.map(f => ({ id: f.id, fileName: f.fileName, fileSize: f.fileSize }))} />
     </div>
   )
 }

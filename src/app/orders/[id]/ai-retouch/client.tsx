@@ -28,6 +28,7 @@ interface PairState {
   originalUrl: string
   retouchedName: string
   retouchedUrl?: string
+  retouchedId?: string
   retouchedStatus: RetouchStatus
   errorMessage?: string
   processingTime?: number
@@ -131,6 +132,7 @@ export function AiRetouchClient({
                   retouchedStatus: '完成' as RetouchStatus,
                   retouchedUrl: `/api/files/proxy?fileId=${data.aiFile.id}`,
                   retouchedName: data.aiFile.fileName,
+                  retouchedId: data.aiFile.id,
                   processingTime: data.aiFile.aiParams?.processingTime,
                 }
               : p
@@ -203,6 +205,7 @@ export function AiRetouchClient({
                 retouchedStatus: '完成' as RetouchStatus,
                 retouchedUrl: `/api/files/proxy?fileId=${data.aiFile.id}`,
                 retouchedName: data.aiFile.fileName,
+                retouchedId: data.aiFile.id,
                 processingTime: data.aiFile.aiParams?.processingTime,
               }
             : p
@@ -228,6 +231,30 @@ export function AiRetouchClient({
 
   const handleReset = useCallback(() => {
     setCurrentParams(null)
+  }, [])
+
+  const handleDeleteRetouched = useCallback(async (fileId: string) => {
+    try {
+      const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('删除失败')
+      setPairs((prev) =>
+        prev.map((p) =>
+          p.retouchedId === fileId
+            ? {
+                ...p,
+                retouchedStatus: '待处理' as RetouchStatus,
+                retouchedUrl: undefined,
+                retouchedId: undefined,
+                retouchedName: p.originalName + '_retouched',
+                processingTime: undefined,
+              }
+            : p
+        )
+      )
+      toast.success('已删除')
+    } catch {
+      toast.error('删除失败，请重试')
+    }
   }, [])
 
   const handleConfirmAll = useCallback(async () => {
@@ -284,15 +311,17 @@ export function AiRetouchClient({
         {pairs.map((pair) => (
           <BeforeAfter
             key={pair.originalId}
-            original={{ name: pair.originalName, url: pair.originalUrl }}
+            original={{ name: pair.originalName, url: pair.originalUrl, fileId: pair.originalId }}
             retouched={{
               name: pair.retouchedName,
               url: pair.retouchedUrl,
               status: pair.retouchedStatus,
               errorMessage: pair.errorMessage,
               processingTime: pair.processingTime,
+              fileId: pair.retouchedId,
             }}
             onRetry={() => handleRetry(pair.originalId)}
+            onDeleteRetouched={handleDeleteRetouched}
           />
         ))}
       </div>

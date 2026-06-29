@@ -16,11 +16,14 @@ interface BeforeAfterProps {
   }
   onRetry?: () => void
   onConfirm?: () => void
+  onDeleteRetouched?: (fileId: string) => void
 }
 
-export function BeforeAfter({ original, retouched, onRetry, onConfirm }: BeforeAfterProps) {
+export function BeforeAfter({ original, retouched, onRetry, onConfirm, onDeleteRetouched }: BeforeAfterProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewName, setPreviewName] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const statusConfig = {
     '待处理': { color: 'bg-gray-100 text-gray-500', label: '待处理' },
@@ -133,6 +136,28 @@ export function BeforeAfter({ original, retouched, onRetry, onConfirm }: BeforeA
                   <Button size="sm" onClick={onConfirm} className="bg-indigo-500 hover:bg-indigo-600 text-xs">
                     ✅ 确认
                   </Button>
+                )}
+                {onDeleteRetouched && retouched.fileId && (
+                  <button
+                    disabled={deleting}
+                    className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs transition-colors ${
+                      confirmDelete
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-white border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300'
+                    }`}
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      if (!confirmDelete) {
+                        setConfirmDelete(true)
+                        setTimeout(() => setConfirmDelete(false), 3000)
+                        return
+                      }
+                      setDeleting(true)
+                      onDeleteRetouched(retouched.fileId!)
+                    }}
+                  >
+                    {deleting ? '删除中...' : confirmDelete ? '⚠ 确认删除' : '🗑 删除'}
+                  </button>
                 )}
               </div>
             </div>

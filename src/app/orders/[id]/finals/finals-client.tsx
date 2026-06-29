@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ThumbCard } from '@/components/orders/thumb-card'
 import { ImagePreview } from '@/components/orders/image-preview'
+import { BatchToolbar } from '@/components/orders/batch-toolbar'
+import { useBatchSelect } from '@/lib/use-batch-select'
 
 interface FileInfo {
   id: string
@@ -17,8 +19,23 @@ export function FinalsClient({ orderId, existingFiles }: { orderId: string; exis
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState<Record<string, number>>({})
   const [previewFile, setPreviewFile] = useState<FileInfo | null>(null)
+  const [files, setFiles] = useState<FileInfo[]>(existingFiles)
+  const [selectMode, setSelectMode] = useState(false)
+  const { selectedIds, selectedSet, toggleSelect, clearSelection } = useBatchSelect()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  async function handleDelete(fileId: string) {
+    try {
+      const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('删除失败')
+      setFiles((prev) => prev.filter((f) => f.id !== fileId))
+      clearSelection()
+      toast.success('已删除')
+    } catch {
+      toast.error('删除失败，请重试')
+    }
+  }
 
   async function handleUpload(files: FileList) {
     setUploading(true)
@@ -85,19 +102,60 @@ export function FinalsClient({ orderId, existingFiles }: { orderId: string; exis
         </div>
       )}
 
-      {existingFiles.length > 0 ? (
-        <div className="grid grid-cols-4 gap-4">
-          {existingFiles.map((f) => (
-            <ThumbCard
-              key={f.id}
-              fileId={f.id}
-              fileName={f.fileName}
-              fileSize={f.fileSize}
-              ringColor="hover:ring-green-400"
-              onClick={() => setPreviewFile(f)}
-            />
-          ))}
-        </div>
+      {files.length > 0 ? (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-400">
+              共 {files.length} 张成片
+            </span>
+            <button
+              className={`text-xs px-3 py-1.5 rounded-md transition-colors ${
+                selectMode
+                  ? 'bg-indigo-100 text-indigo-600'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              onClick={() => {
+                setSelectMode(!selectMode)
+                clearSelection()
+              }}
+            >
+              {selectMode ? '退出选择' : '☐ 批量选择'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-4 gap-4">
+            {files.map((f) => (
+              <ThumbCard
+                key={f.id}
+                fileId={f.id}
+                fileName={f.fileName}
+                fileSize={f.fileSize}
+                ringColor="hover:ring-green-400"
+                onClick={() => {
+                  if (selectMode) {
+                    toggleSelect(f.id)
+                  } else {
+                    setPreviewFile(f)
+                  }
+                }}
+                onDelete={handleDelete}
+                selectable={selectMode}
+                selected={selectedSet.has(f.id)}
+                onSelect={toggleSelect}
+              />
+            ))}
+          </div>
+
+          <BatchToolbar
+            selectedIds={selectedIds}
+            onClear={clearSelection}
+            onDeleted={() => {
+              setFiles((prev) =>
+                prev.filter((f) => !selectedIds.includes(f.id))
+              )
+            }}
+          />
+        </>
       ) : (
         !uploading && <p className="text-center text-gray-400 py-8">暂无成片</p>
       )}
